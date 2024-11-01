@@ -38,7 +38,7 @@ class HomeScreen extends StatelessWidget {
         appBar: AppBar(
           leading: Padding(
             padding: EdgeInsets.all(8.0),
-            child: Image.asset('assets/logo.png'), // Coloca tu logo aquí
+            child: Image.asset('assets/logo.png'),
           ),
           title: Text('Discounts'),
           actions: [
@@ -83,69 +83,102 @@ class DiscountsTab extends StatelessWidget {
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(child: Text('No deals found'));
         } else {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Store')),
-                DataColumn(label: Text('Savings')),
-                DataColumn(label: Text('Price')),
-                DataColumn(label: Text('Title')),
-              ],
-              rows: snapshot.data!.map((deal) {
-                return DataRow(cells: [
-                  DataCell(
-                    getStoreIcon(deal.storeID),
-                  ),
-                  DataCell(
-                    Text('${double.parse(deal.savings).round()}%'),
-                  ),
-                  DataCell(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '\$${deal.normalPrice}',
-                          style: TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            color: Colors.red,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: DataTable(
+                    horizontalMargin: 10,
+                    columnSpacing: 10,
+                    columns: const [
+                      DataColumn(label: Text('Store', style: TextStyle(fontSize: 15))),
+                      DataColumn(label: Text('Savings', style: TextStyle(fontSize: 15))),
+                      DataColumn(label: Text('Price', style: TextStyle(fontSize: 15))),
+                      DataColumn(label: Text('Title', style: TextStyle(fontSize: 15))),
+                    ],
+                    rows: snapshot.data!.map((deal) {
+                      return DataRow(cells: [
+                        DataCell(
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6),
+                            child: getStoreIcon(deal.storeID),
                           ),
                         ),
-                        Text(
-                          '\$${deal.salePrice}',
-                          style: TextStyle(color: Colors.green),
+                        DataCell(
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6),
+                            child: Text('${double.parse(deal.savings).round()}%', style: TextStyle(fontSize: 12)),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                  DataCell(
-                    Row(
-                      children: [
-                        deal.thumb != null
-                            ? Image.network(
-                          deal.thumb!,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                        )
-                            : SizedBox(
-                          width: 50,
-                          height: 50,
-                          child: Icon(Icons.image_not_supported, color: Colors.grey),
+                        DataCell(
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '\$${deal.normalPrice}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Text(
+                                  '\$${deal.salePrice}',
+                                  style: TextStyle(fontSize: 12, color: Colors.green),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        SizedBox(width: 8),
-                        Expanded(child: Text(deal.title)),
-                      ],
-                    ),
+                        DataCell(
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              children: [
+                                deal.thumb != null
+                                    ? Image.network(
+                                  deal.thumb!,
+                                  width: 60,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                )
+                                    : SizedBox(
+                                  width: 60,
+                                  height: 40,
+                                  child: Icon(Icons.image_not_supported, color: Colors.grey),
+                                ),
+                                SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    deal.title,
+                                    style: TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ]);
+                    }).toList(),
                   ),
-                ]);
-              }).toList(),
-            ),
+                ),
+              );
+            },
           );
         }
       },
     );
   }
+
+
+
 
   // Función para obtener el ícono de la tienda según el storeID
   Widget getStoreIcon(String storeID) {
