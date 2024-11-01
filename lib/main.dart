@@ -1,125 +1,182 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'GameDeal.dart';
+
+Future<List<GameDeal>> fetchGameDeals() async {
+  final response = await http.get(
+    Uri.parse('https://www.cheapshark.com/api/1.0/deals'),
+  );
+  if (response.statusCode == 200) {
+    List jsonResponse = json.decode(response.body);
+    return jsonResponse.map((deal) => GameDeal.fromJson(deal)).toList();
+  } else {
+    throw Exception('Failed to load game deals');
+  }
+}
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+      title: 'Discounts App',
+      theme: ThemeData.dark(),
+      home: HomeScreen(),
+    );
+  }
+}
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Image.asset('assets/logo.png'), // Coloca tu logo aquí
+          ),
+          title: Text('Discounts'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.person),
+              onPressed: () {
+                // Acción para acceder al perfil
+              },
+            ),
+          ],
+          bottom: TabBar(
+            tabs: [
+              Tab(text: 'Discounts'),
+              Tab(text: 'Storefronts'),
+              Tab(text: 'Wishlist'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            DiscountsTab(),
+            StorefrontsTab(),
+            WishlistTab(),
+          ],
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+class DiscountsTab extends StatelessWidget {
+  Future<List<GameDeal>> futureGameDeals = fetchGameDeals();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<GameDeal>>(
+      future: futureGameDeals,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No deals found'));
+        } else {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('Store')),
+                DataColumn(label: Text('Savings')),
+                DataColumn(label: Text('Price')),
+                DataColumn(label: Text('Title')),
+              ],
+              rows: snapshot.data!.map((deal) {
+                return DataRow(cells: [
+                  DataCell(
+                    getStoreIcon(deal.storeID),
+                  ),
+                  DataCell(
+                    Text('${double.parse(deal.savings).round()}%'),
+                  ),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '\$${deal.normalPrice}',
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.red,
+                          ),
+                        ),
+                        Text(
+                          '\$${deal.salePrice}',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DataCell(
+                    Row(
+                      children: [
+                        deal.thumb != null
+                            ? Image.network(
+                          deal.thumb!,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                            : SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: Icon(Icons.image_not_supported, color: Colors.grey),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(child: Text(deal.title)),
+                      ],
+                    ),
+                  ),
+                ]);
+              }).toList(),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  // Función para obtener el ícono de la tienda según el storeID
+  Widget getStoreIcon(String storeID) {
+    return Icon(Icons.store);
+    /*switch (storeID) {
+      case '1':
+        return Image.asset('assets/steam_icon.png', width: 40);
+      case '2':
+        return Image.asset('assets/gog_icon.png', width: 40);
+      case '3':
+        return Image.asset('assets/epic_icon.png', width: 40);
+      default:
+        return Icon(Icons.store);
+    }*/
+  }
+}
+
+class StorefrontsTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('Storefronts'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
+class WishlistTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return Center(
+      child: Text('Wishlist'),
     );
   }
 }
