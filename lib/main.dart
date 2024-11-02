@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'GameDeal.dart';
+import 'Store.dart';
 
 Future<List<GameDeal>> fetchGameDeals() async {
   final response = await http.get(
@@ -14,6 +15,19 @@ Future<List<GameDeal>> fetchGameDeals() async {
     throw Exception('Failed to load game deals');
   }
 }
+
+Future<List<Store>> fetchStores() async {
+  final response = await http.get(Uri.parse('https://www.cheapshark.com/api/1.0/stores'));
+
+  if (response.statusCode == 200) {
+    List<dynamic> data = jsonDecode(response.body);
+    return data.map((json) => Store.fromJson(json)).toList();
+  } else {
+    throw Exception('Failed to load stores');
+  }
+}
+
+List<Store> storeList = [];
 
 void main() {
   runApp(MyApp());
@@ -29,45 +43,68 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Image.asset('assets/logo.png'),
-          ),
-          title: Text('Discounts'),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.person),
-              onPressed: () {
-                // Acción para acceder al perfil
-              },
+    return FutureBuilder<List<Store>>(
+      future: fetchStores(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),
+          );
+        } else if (snapshot.hasData) {
+          storeList = snapshot.data!; // Almacena las tiendas en `storeList` cuando están disponibles
+
+          return DefaultTabController(
+            length: 3,
+            child: Scaffold(
+              appBar: AppBar(
+                leading: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Image.asset('lib/assets/logo.png'),
+                ),
+                title: Text('Discounts'),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.person),
+                    onPressed: () {
+                      // Acción para acceder al perfil
+                    },
+                  ),
+                ],
+                bottom: TabBar(
+                  tabs: [
+                    Tab(text: 'Discounts'),
+                    Tab(text: 'Storefronts'),
+                    Tab(text: 'Wishlist'),
+                  ],
+                ),
+              ),
+              body: TabBarView(
+                children: [
+                  DiscountsTab(),
+                  StorefrontsTab(),
+                  WishlistTab(),
+                ],
+              ),
             ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(text: 'Discounts'),
-              Tab(text: 'Storefronts'),
-              Tab(text: 'Wishlist'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            DiscountsTab(),
-            StorefrontsTab(),
-            WishlistTab(),
-          ],
-        ),
-      ),
+          );
+        } else {
+          return Scaffold(
+            body: Center(child: Text('No stores found')),
+          );
+        }
+      },
     );
   }
 }
+
 class DiscountsTab extends StatelessWidget {
   Future<List<GameDeal>> futureGameDeals = fetchGameDeals();
 
@@ -177,22 +214,23 @@ class DiscountsTab extends StatelessWidget {
     );
   }
 
-
-
-
-  // Función para obtener el ícono de la tienda según el storeID
   Widget getStoreIcon(String storeID) {
-    return Icon(Icons.store);
-    /*switch (storeID) {
-      case '1':
-        return Image.asset('assets/steam_icon.png', width: 40);
-      case '2':
-        return Image.asset('assets/gog_icon.png', width: 40);
-      case '3':
-        return Image.asset('assets/epic_icon.png', width: 40);
-      default:
-        return Icon(Icons.store);
-    }*/
+    final store = storeList.firstWhere(
+          (store) => store.storeID == storeID,
+      orElse: () => Store(storeID: '', storeName: '', iconUrl: ''),
+    );
+
+    if (store.storeID.isNotEmpty) {
+      return Image.network(
+        store.iconUrl,
+        width: 27,
+        height: 27,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Icon(Icons.store), // Icono de respaldo
+      );
+    } else {
+      return Icon(Icons.store);
+    }
   }
 }
 
