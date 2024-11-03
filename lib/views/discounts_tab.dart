@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DiscountsTab extends StatefulWidget {
   @override
@@ -124,6 +125,11 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                   DataColumn(label: Text('Title', style: TextStyle(fontSize: 15))),
                                 ],
                                 rows: snapshot.data!.map((deal) {
+                                  final storeName = storeList.firstWhere(
+                                        (store) => store.storeID == deal.storeID,
+                                    orElse: () => Store(storeID: '', storeName: 'Unknown', iconUrl: ''),
+                                  ).storeName;
+
                                   return DataRow(cells: [
                                     DataCell(
                                       Padding(
@@ -185,6 +191,13 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 2,
                                               ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(Icons.share, size: 18),
+                                              onPressed: () {
+                                                final message = "Hola, el juego '${deal.title}' está en oferta!!! está ${double.parse(deal.savings).round()}% menos en ${storeName}";
+                                                Share.share(message);
+                                              },
                                             ),
                                           ],
                                         ),
