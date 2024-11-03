@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 import 'GameDeal.dart';
 import 'Store.dart';
 
-Future<List<GameDeal>> fetchGameDeals() async {
+Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0}) async {
   final response = await http.get(
-    Uri.parse('https://www.cheapshark.com/api/1.0/deals'),
+    Uri.parse('https://www.cheapshark.com/api/1.0/deals?pageNumber=$pageNumber'),
   );
   if (response.statusCode == 200) {
     List jsonResponse = json.decode(response.body);
@@ -59,7 +59,7 @@ class HomeScreen extends StatelessWidget {
             body: Center(child: Text('Error: ${snapshot.error}')),
           );
         } else if (snapshot.hasData) {
-          storeList = snapshot.data!; // Almacena las tiendas en `storeList` cuando están disponibles
+          storeList = snapshot.data!;
 
           return DefaultTabController(
             length: 3,
@@ -105,27 +105,60 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class DiscountsTab extends StatelessWidget {
-  Future<List<GameDeal>> futureGameDeals = fetchGameDeals();
+class DiscountsTab extends StatefulWidget {
+  @override
+  _DiscountsTabState createState() => _DiscountsTabState();
+}
+
+class _DiscountsTabState extends State<DiscountsTab> {
+  int pageNumber = 0;
+  late Future<List<GameDeal>> futureGameDeals;
+
+  @override
+  void initState() {
+    super.initState();
+    futureGameDeals = fetchGameDeals(pageNumber: pageNumber);
+  }
+
+  void loadDeals() {
+    setState(() {
+      futureGameDeals = fetchGameDeals(pageNumber: pageNumber);
+    });
+  }
+
+  void nextPage() {
+    setState(() {
+      pageNumber++;
+      loadDeals();
+    });
+  }
+
+  void previousPage() {
+    if (pageNumber > 0) {
+      setState(() {
+        pageNumber--;
+        loadDeals();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<GameDeal>>(
-      future: futureGameDeals,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No deals found'));
-        } else {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+    return Column(
+      children: [
+        Expanded(
+          child: FutureBuilder<List<GameDeal>>(
+            future: futureGameDeals,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No deals found'));
+              } else {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
                   child: DataTable(
                     horizontalMargin: 10,
                     columnSpacing: 10,
@@ -205,12 +238,25 @@ class DiscountsTab extends StatelessWidget {
                       ]);
                     }).toList(),
                   ),
-                ),
-              );
+                );
+              }
             },
-          );
-        }
-      },
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TextButton(
+              onPressed: previousPage,
+              child: Text('Back'),
+            ),
+            TextButton(
+              onPressed: nextPage,
+              child: Text('Next'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -226,7 +272,7 @@ class DiscountsTab extends StatelessWidget {
         width: 27,
         height: 27,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Icon(Icons.store), // Icono de respaldo
+        errorBuilder: (context, error, stackTrace) => Icon(Icons.store),
       );
     } else {
       return Icon(Icons.store);
