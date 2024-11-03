@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 import 'GameDeal.dart';
 import 'Store.dart';
 
-Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0}) async {
+Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0, String title = ''}) async {
   final response = await http.get(
-    Uri.parse('https://www.cheapshark.com/api/1.0/deals?pageNumber=$pageNumber'),
+    Uri.parse('https://www.cheapshark.com/api/1.0/deals?pageNumber=$pageNumber&title=$title'),
   );
   if (response.statusCode == 200) {
     List jsonResponse = json.decode(response.body);
@@ -111,25 +111,26 @@ class DiscountsTab extends StatefulWidget {
 }
 
 class _DiscountsTabState extends State<DiscountsTab> {
+  Future<List<GameDeal>>? futureGameDeals;
   int pageNumber = 0;
-  late Future<List<GameDeal>> futureGameDeals;
+  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    futureGameDeals = fetchGameDeals(pageNumber: pageNumber);
+    fetchDeals();
   }
 
-  void loadDeals() {
+  void fetchDeals() {
     setState(() {
-      futureGameDeals = fetchGameDeals(pageNumber: pageNumber);
+      futureGameDeals = fetchGameDeals(pageNumber: pageNumber, title: searchQuery);
     });
   }
 
   void nextPage() {
     setState(() {
       pageNumber++;
-      loadDeals();
+      fetchDeals();
     });
   }
 
@@ -137,15 +138,62 @@ class _DiscountsTabState extends State<DiscountsTab> {
     if (pageNumber > 0) {
       setState(() {
         pageNumber--;
-        loadDeals();
+        fetchDeals();
       });
     }
   }
 
+  void searchDeals(String query) {
+    setState(() {
+      searchQuery = query;
+      pageNumber = 0;  // Reinicia a la primera página al hacer una búsqueda
+      fetchDeals();
+    });
+  }
+
+  void resetSearch() {
+    setState(() {
+      searchQuery = '';
+      pageNumber = 0;  // Reinicia a la primera página
+      fetchDeals();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    TextEditingController searchController = TextEditingController();
+
     return Column(
       children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search for a game...',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                  ),
+                  onSubmitted: (query) {
+                    searchDeals(query);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: () {
+                  searchDeals(searchController.text);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.clear),
+                onPressed: resetSearch,
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: FutureBuilder<List<GameDeal>>(
             future: futureGameDeals,
@@ -157,104 +205,119 @@ class _DiscountsTabState extends State<DiscountsTab> {
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return Center(child: Text('No deals found'));
               } else {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: DataTable(
-                    horizontalMargin: 10,
-                    columnSpacing: 10,
-                    columns: const [
-                      DataColumn(label: Text('Store', style: TextStyle(fontSize: 15))),
-                      DataColumn(label: Text('Savings', style: TextStyle(fontSize: 15))),
-                      DataColumn(label: Text('Price', style: TextStyle(fontSize: 15))),
-                      DataColumn(label: Text('Title', style: TextStyle(fontSize: 15))),
-                    ],
-                    rows: snapshot.data!.map((deal) {
-                      return DataRow(cells: [
-                        DataCell(
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            child: getStoreIcon(deal.storeID),
-                          ),
-                        ),
-                        DataCell(
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            child: Text('${double.parse(deal.savings).round()}%', style: TextStyle(fontSize: 12)),
-                          ),
-                        ),
-                        DataCell(
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '\$${deal.normalPrice}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                Text(
-                                  '\$${deal.salePrice}',
-                                  style: TextStyle(fontSize: 12, color: Colors.green),
-                                ),
-                              ],
+                return Column(
+                  children: [
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                              child: DataTable(
+                                horizontalMargin: 10,
+                                columnSpacing: 10,
+                                columns: const [
+                                  DataColumn(label: Text('Store', style: TextStyle(fontSize: 15))),
+                                  DataColumn(label: Text('Savings', style: TextStyle(fontSize: 15))),
+                                  DataColumn(label: Text('Price', style: TextStyle(fontSize: 15))),
+                                  DataColumn(label: Text('Title', style: TextStyle(fontSize: 15))),
+                                ],
+                                rows: snapshot.data!.map((deal) {
+                                  return DataRow(cells: [
+                                    DataCell(
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: getStoreIcon(deal.storeID),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: Text('${double.parse(deal.savings).round()}%', style: TextStyle(fontSize: 12)),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '\$${deal.normalPrice}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                decoration: TextDecoration.lineThrough,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              '\$${deal.salePrice}',
+                                              style: TextStyle(fontSize: 12, color: Colors.green),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: Row(
+                                          children: [
+                                            deal.thumb != null
+                                                ? Image.network(
+                                              deal.thumb!,
+                                              width: 60,
+                                              height: 40,
+                                              fit: BoxFit.cover,
+                                            )
+                                                : SizedBox(
+                                              width: 60,
+                                              height: 40,
+                                              child: Icon(Icons.image_not_supported, color: Colors.grey),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                deal.title,
+                                                style: TextStyle(fontSize: 12),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ]);
+                                }).toList(),
+                              ),
                             ),
-                          ),
+                          );
+                        },
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          icon: Icon(Icons.arrow_back),
+                          label: Text('Back'),
+                          onPressed: previousPage,
                         ),
-                        DataCell(
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              children: [
-                                deal.thumb != null
-                                    ? Image.network(
-                                  deal.thumb!,
-                                  width: 60,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                )
-                                    : SizedBox(
-                                  width: 60,
-                                  height: 40,
-                                  child: Icon(Icons.image_not_supported, color: Colors.grey),
-                                ),
-                                SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    deal.title,
-                                    style: TextStyle(fontSize: 12),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        TextButton.icon(
+                          icon: Icon(Icons.arrow_forward),
+                          label: Text('Next'),
+                          onPressed: nextPage,
                         ),
-                      ]);
-                    }).toList(),
-                  ),
+                      ],
+                    ),
+                  ],
                 );
               }
             },
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton(
-              onPressed: previousPage,
-              child: Text('Back'),
-            ),
-            TextButton(
-              onPressed: nextPage,
-              child: Text('Next'),
-            ),
-          ],
         ),
       ],
     );
@@ -279,6 +342,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
     }
   }
 }
+
 
 class StorefrontsTab extends StatelessWidget {
   @override
