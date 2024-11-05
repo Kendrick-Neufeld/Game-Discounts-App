@@ -288,6 +288,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                           child: GestureDetector(
                                             onTap: () {
                                               showGameDetailsDialog(deal);
+                                              
                                             },
                                             child: Row(
                                               children: [
