@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
-import 'package:share_plus/share_plus.dart';
 
 class DiscountsTab extends StatefulWidget {
   @override
@@ -196,7 +196,10 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                               icon: Icon(Icons.share, size: 18),
                                               onPressed: () {
                                                 final message = "Hola, el juego '${deal.title}' está en oferta!!! está ${double.parse(deal.savings).round()}% menos en ${storeName}";
-                                                Share.share(message);
+                                                Clipboard.setData(ClipboardData(text: message));
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text("Mensaje copiado al portapapeles")),
+                                                );
                                               },
                                             ),
                                           ],
