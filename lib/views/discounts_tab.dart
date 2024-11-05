@@ -35,6 +35,126 @@ class _DiscountsTabState extends State<DiscountsTab> {
     });
   }
 
+  void showGameDetailsDialog(GameDeal deal) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Container(
+            width: 400, // Ancho del cuadro de diálogo
+            padding: EdgeInsets.all(16),
+            child: FutureBuilder<Map<String, String>?>(
+              future: GameDeal.fetchCheapestPrice(deal.storeID),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error loading data'));
+                } else if (!snapshot.hasData || snapshot.data == null) {
+                  return Center(child: Text('No data available'));
+                } else {
+                  final cheapestPrice = snapshot.data!['cheapestPriceEver'] ?? 'N/A';
+                  final cheapestDate = snapshot.data!['cheapestPriceDate'] ?? 'N/A';
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Tooltip(
+                              message: deal.title,
+                              child: Text(
+                                deal.title,
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Row(
+                            children: [
+                              Text(
+                                '\$${deal.salePrice}',
+                                style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(width: 8),
+                              getStoreIcon(deal.storeID),
+                            ],
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close, size: 20),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
+                      Divider(),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Precios:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '\$${deal.salePrice} (Venta)',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                Text(
+                                  '\$${deal.normalPrice} (Normal)',
+                                  style: TextStyle(decoration: TextDecoration.lineThrough, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                deal.thumb != null
+                                    ? Image.network(
+                                  deal.thumb!,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                )
+                                    : Icon(Icons.image_not_supported, size: 100),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Cheapest Price Ever:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                Text('\$$cheapestPrice', style: TextStyle(fontSize: 12)),
+                                Text('Date: $cheapestDate', style: TextStyle(fontSize: 12)),
+                                SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {},
+                                  child: Text('Add to Wishlist', style: TextStyle(fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void previousPage() {
     if (pageNumber > 0) {
       setState(() {
@@ -69,11 +189,11 @@ class _DiscountsTabState extends State<DiscountsTab> {
         Positioned.fill(
           child: Opacity(
             opacity: 0.15,
-              child: Image.asset(
-                'lib/assets/discounts_background.jpeg',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
+            child: Image.asset(
+              'lib/assets/discounts_background.jpeg',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
           ),
         ),
         Column(
@@ -178,50 +298,49 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      DataCell(
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 6),
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              showGameDetailsDialog(deal);
-                                              
-                                            },
-                                            child: Row(
-                                              children: [
-                                                deal.thumb != null
-                                                    ? Image.network(
-                                                  deal.thumb!,
-                                                  width: 60,
-                                                  height: 40,
-                                                  fit: BoxFit.cover,
-                                                )
-                                                    : SizedBox(
-                                                  width: 60,
-                                                  height: 40,
-                                                  child: Icon(Icons.image_not_supported, color: Colors.grey),
-                                                ),
-                                                SizedBox(width: 4),
-                                                Expanded(
-                                                  child: Text(
-                                                    deal.title,
-                                                    style: TextStyle(fontSize: 12),
-                                                    overflow: TextOverflow.ellipsis,
-                                                    maxLines: 2,
+                                        DataCell(
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(vertical: 6),
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                showGameDetailsDialog(deal);
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  deal.thumb != null
+                                                      ? Image.network(
+                                                    deal.thumb!,
+                                                    width: 60,
+                                                    height: 40,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                      : SizedBox(
+                                                    width: 60,
+                                                    height: 40,
+                                                    child: Icon(Icons.image_not_supported, color: Colors.grey),
                                                   ),
-                                                ),
-                                                IconButton(
-                                                  icon: Icon(Icons.share, size: 18),
-                                                  onPressed: () {
-                                                    final message =
-                                                        "Hola, el juego '${deal.title}' está en oferta!!! está ${double.parse(deal.savings).round()}% menos en ${storeName}";
-                                                    Clipboard.setData(ClipboardData(text: message));
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text("Mensaje copiado al portapapeles")),
-                                                    );
-                                                  },
-                                                ),
-                                              ],
+                                                  SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      deal.title,
+                                                      style: TextStyle(fontSize: 12),
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 2,
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    icon: Icon(Icons.share, size: 18),
+                                                    onPressed: () {
+                                                      final message =
+                                                          "Hola, el juego '${deal.title}' está en oferta!!! está ${double.parse(deal.savings).round()}% menos en $storeName";
+                                                      Clipboard.setData(ClipboardData(text: message));
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(content: Text("Mensaje copiado al portapapeles")),
+                                                      );
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -259,6 +378,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
       ],
     );
   }
+
 
   Widget getStoreIcon(String storeID) {
     final store = storeList.firstWhere(
