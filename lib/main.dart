@@ -6,6 +6,8 @@ import 'Store.dart';
 import 'views/discounts_tab.dart';
 import 'views/storefonts_tab.dart';
 import 'views/wishlist_tab.dart';
+import 'package:flutter/services.dart';
+
 
 Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0, String title = ''}) async {
   final response = await http.get(
