@@ -178,9 +178,15 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                             ),
                                           ),
                                         ),
-                                        DataCell(
-                                          Padding(
-                                            padding: EdgeInsets.symmetric(vertical: 6),
+                                      ),
+                                      DataCell(
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 6),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              showGameDetailsDialog(deal);
+                                              
+                                            },
                                             child: Row(
                                               children: [
                                                 deal.thumb != null
