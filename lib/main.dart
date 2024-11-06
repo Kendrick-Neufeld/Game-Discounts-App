@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:game_discounts_app/views/login_view.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'GameDeal.dart';
 import 'Store.dart';
+import 'controllers/choose_picture_controller.dart';
 import 'views/discounts_tab.dart';
 import 'views/storefonts_tab.dart';
 import 'views/wishlist_tab.dart';
@@ -35,7 +38,14 @@ Future<List<Store>> fetchStores() async {
 List<Store> storeList = [];
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ImagePickerController()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

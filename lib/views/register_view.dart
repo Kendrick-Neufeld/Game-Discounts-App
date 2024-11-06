@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/choose_picture_controller.dart';
+import '../widgets/image_picker_options.dart';
 import 'login_view.dart';
 
 class RegisterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Obtener el ImagePickerController
+    final imagePickerController = Provider.of<ImagePickerController>(context);
+
     return Scaffold(
       backgroundColor: Colors.grey[800],
       body: Center(
@@ -17,6 +23,41 @@ class RegisterView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Avatar (cámara) colocado en la parte superior
+              GestureDetector(
+                onTap: () {
+                  showImagePickerOptions(context); // Abre el selector de imagen
+                },
+                child: CircleAvatar(
+                  radius: 55,
+                  backgroundColor: Color(0xffFDCF09),
+                  child: imagePickerController.image != null
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: Image.file(
+                      imagePickerController.image!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    width: 100,
+                    height: 100,
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20), // Espacio entre el avatar y los campos de texto
+
+              // Campos de texto para el registro
               TextField(
                 decoration: InputDecoration(labelText: 'Nombre'),
               ),
@@ -34,20 +75,17 @@ class RegisterView extends StatelessWidget {
                 obscureText: true,
               ),
               SizedBox(height: 20),
+
+              // Botón para registrar (sin imagen de perfil, solo registro)
               ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[100],
-                  foregroundColor: Colors.grey[700],
-                ),
-                child: Text('Agregar Foto'),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Lógica de registro
+                },
                 child: Text('Register'),
               ),
               SizedBox(height: 20),
+
+              // Enlace al login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
