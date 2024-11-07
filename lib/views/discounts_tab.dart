@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
@@ -35,124 +36,105 @@ class _DiscountsTabState extends State<DiscountsTab> {
     });
   }
 
-  void showGameDetailsDialog(GameDeal deal) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Container(
-            width: 400, // Ancho del cuadro de diálogo
-            padding: EdgeInsets.all(16),
-            child: FutureBuilder<Map<String, String>?>(
-              future: GameDeal.fetchCheapestPrice(deal.storeID),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error loading data'));
-                } else if (!snapshot.hasData || snapshot.data == null) {
-                  return Center(child: Text('No data available'));
-                } else {
-                  final cheapestPrice = snapshot.data!['cheapestPriceEver'] ?? 'N/A';
-                  final cheapestDate = snapshot.data!['cheapestPriceDate'] ?? 'N/A';
+  void showGameDetailsDialog(BuildContext context, String gameID) async {
+    final game = await fetchGameDetails(gameID);
 
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Tooltip(
-                              message: deal.title,
-                              child: Text(
-                                deal.title,
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Row(
-                            children: [
-                              Text(
-                                '\$${deal.salePrice}',
-                                style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 8),
-                              getStoreIcon(deal.storeID),
-                            ],
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.close, size: 20),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      ),
-                      Divider(),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Precios:',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  '\$${deal.salePrice} (Venta)',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                Text(
-                                  '\$${deal.normalPrice} (Normal)',
-                                  style: TextStyle(decoration: TextDecoration.lineThrough, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                deal.thumb != null
-                                    ? Image.network(
-                                  deal.thumb!,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                )
-                                    : Icon(Icons.image_not_supported, size: 100),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Cheapest Price Ever:',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                                Text('\$$cheapestPrice', style: TextStyle(fontSize: 12)),
-                                Text('Date: $cheapestDate', style: TextStyle(fontSize: 12)),
-                                SizedBox(height: 8),
-                                ElevatedButton(
-                                  onPressed: () {},
-                                  child: Text('Add to Wishlist', style: TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                }
-              },
+    if (game != null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  game.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '\$${game.deals.first.price}',
+                  style: TextStyle(color: Colors.green, fontSize: 16),
+                ),
+              ],
             ),
-          ),
-        );
-      },
-    );
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Image.network(game.thumb, height: 100),
+                  SizedBox(height: 10),
+                  Text(
+                    'Cheapest Price Ever: \$${game.cheapestPriceEver} on ${DateFormat.yMMMd().format(game.cheapestPriceDate)}',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 15),
+                  Text('All deals:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: game.deals.map((deal) {
+                      return Container(
+                        width: (MediaQuery.of(context).size.width / 2) - 32, // Divide en dos columnas
+                        child: Row(
+                          children: [
+                            getStoreIcon(deal.storeID),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '\$${deal.price} (${double.parse(deal.savings).round()}% off)',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  // Implementa la lógica para agregar a la wishlist aquí
+                  Navigator.of(context).pop();
+                },
+                child: Text('Agregar a Wishlist'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // Alerta en caso de error al cargar datos
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('No se pudo cargar la información del juego.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void previousPage() {
@@ -303,7 +285,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                             padding: EdgeInsets.symmetric(vertical: 6),
                                             child: GestureDetector(
                                               onTap: () {
-                                                showGameDetailsDialog(deal);
+                                                showGameDetailsDialog(context, deal.gameID);
                                               },
                                               child: Row(
                                                 children: [

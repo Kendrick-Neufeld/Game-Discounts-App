@@ -2,38 +2,42 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GameDeal {
+  final String gameID;         // Agrega gameID aquí
   final String title;
   final String storeID;
   final String salePrice;
   final String normalPrice;
   final String savings;
   final String? steamRatingText; // Campo opcional
-  final String? thumb; // Campo opcional
+  final String? thumb;           // Campo opcional
   final String? cheapestPriceEver;
   final String? cheapestPriceDate;
 
   GameDeal({
+    required this.gameID,       // Asegúrate de que gameID es obligatorio
     required this.title,
     required this.storeID,
     required this.salePrice,
     required this.normalPrice,
     required this.savings,
-    this.steamRatingText, // Campo opcional
-    this.thumb, // Campo opcional
+    this.steamRatingText,       // Campo opcional
+    this.thumb,                 // Campo opcional
     this.cheapestPriceEver,
     this.cheapestPriceDate,
   });
 
   factory GameDeal.fromJson(Map<String, dynamic> json) {
     return GameDeal(
+      gameID: json['gameID'],             // Asigna el gameID desde el JSON
       title: json['title'] ?? 'Unknown Title',
       storeID: json['storeID'] ?? 'Unknown Store',
       salePrice: json['salePrice'] ?? '0.00',
       normalPrice: json['normalPrice'] ?? '0.00',
       savings: json['savings'] ?? '0.00',
-      steamRatingText: json['steamRatingText'],
-      // Opcional, puede ser null
-      thumb: json['thumb'], // Opcional, puede ser null
+      steamRatingText: json['steamRatingText'], // Campo opcional
+      thumb: json['thumb'],                      // Campo opcional
+      cheapestPriceEver: json['cheapestPriceEver'],
+      cheapestPriceDate: json['cheapestPriceDate'],
     );
   }
 

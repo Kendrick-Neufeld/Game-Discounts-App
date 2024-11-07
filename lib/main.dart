@@ -3,6 +3,7 @@ import 'package:game_discounts_app/views/login_view.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'Game.dart';
 import 'GameDeal.dart';
 import 'Store.dart';
 import 'controllers/choose_picture_controller.dart';
@@ -11,7 +12,18 @@ import 'views/storefonts_tab.dart';
 import 'views/wishlist_tab.dart';
 import 'package:flutter/services.dart';
 
+Future<Game?> fetchGameDetails(String gameID) async {
+  final url = 'https://www.cheapshark.com/api/1.0/games?id=$gameID';
+  final response = await http.get(Uri.parse(url));
 
+  if (response.statusCode == 200) {
+    final jsonResponse = json.decode(response.body);
+    return Game.fromJson(jsonResponse);
+  } else {
+    print('Failed to load game details');
+    return null;
+  }
+}
 Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0, String title = ''}) async {
   final response = await http.get(
     Uri.parse('https://www.cheapshark.com/api/1.0/deals?pageNumber=$pageNumber&title=$title'),
