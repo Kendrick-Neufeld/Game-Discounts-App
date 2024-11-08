@@ -110,56 +110,72 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Store>>(
-      future: fetchStores(),
+      future: fetchStores(),  // Mantener la lógica de fetchStores
       builder: (context, snapshot) {
-        return DefaultTabController(
-          length: 3,
-          child: Scaffold(
-            appBar: AppBar(
-              leading: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Image.asset('lib/assets/logo.png'),
-              ),
-              title: Text('Discounts'),
-              actions: [
-                IconButton(
-                  icon: user.profilePicture != null
-                      ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
-                      : Icon(Icons.person),
-                  onPressed: () async {
-                    final updatedUser = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserProfileView(user: user),
-                      ),
-                    );
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),  // Esperando la carga
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),  // Error en la carga
+          );
+        } else if (snapshot.hasData) {
+          storeList = snapshot.data!;  // Asigna los datos a storeList
 
-                    // Actualiza el usuario en caso de que haya sido editado
-                    if (updatedUser != null) {
-                      setState(() {
-                        user = updatedUser;  // Actualizamos el usuario usando setState
-                      });
-                    }
-                  },
+          return DefaultTabController(
+            length: 3,
+            child: Scaffold(
+              appBar: AppBar(
+                leading: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Image.asset('lib/assets/logo.png'),
                 ),
-              ],
-              bottom: TabBar(
-                tabs: [
-                  Tab(text: 'Discounts'),
-                  Tab(text: 'Storefronts'),
-                  Tab(text: 'Wishlist'),
+                title: Text('Discounts'),
+                actions: [
+                  IconButton(
+                    icon: user.profilePicture != null
+                        ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
+                        : Icon(Icons.person),
+                    onPressed: () async {
+                      final updatedUser = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfileView(user: user),
+                        ),
+                      );
+
+                      // Actualiza el usuario en caso de que haya sido editado
+                      if (updatedUser != null) {
+                        setState(() {
+                          user = updatedUser;  // Actualizamos el usuario usando setState
+                        });
+                      }
+                    },
+                  ),
+                ],
+                bottom: TabBar(
+                  tabs: [
+                    Tab(text: 'Discounts'),
+                    Tab(text: 'Storefronts'),
+                    Tab(text: 'Wishlist'),
+                  ],
+                ),
+              ),
+              body: TabBarView(
+                children: [
+                  DiscountsTab(),
+                  StorefrontsTab(),
+                  WishlistTab(),
                 ],
               ),
             ),
-            body: TabBarView(
-              children: [
-                DiscountsTab(),
-                StorefrontsTab(),
-                WishlistTab(),
-              ],
-            ),
-          ),
-        );
+          );
+        } else {
+          return Scaffold(
+            body: Center(child: Text('No stores found')),  // No se encontraron tiendas
+          );
+        }
       },
     );
   }
