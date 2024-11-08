@@ -13,6 +13,7 @@ import 'views/wishlist_tab.dart';
 import 'package:flutter/services.dart';
 import '/services/DatabaseHelper.dart';
 import 'models/user.dart';
+import 'views/user_profile_view.dart';
 
 Future<Game?> fetchGameDetails(String gameID) async {
   final url = 'https://www.cheapshark.com/api/1.0/games?id=$gameID';
@@ -88,52 +89,93 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final User user;
 
   HomeScreen({required this.user});
 
   @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late User user;  // Usar una variable mutable para el estado del usuario
+
+  @override
+  void initState() {
+    super.initState();
+    user = widget.user;  // Inicializamos el usuario con el valor pasado
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Store>>(
-      future: fetchStores(),
+      future: fetchStores(),  // Mantener la lógica de fetchStores
       builder: (context, snapshot) {
-        return DefaultTabController(
-          length: 3,
-          child: Scaffold(
-            appBar: AppBar(
-              leading: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Image.asset('lib/assets/logo.png'),
-              ),
-              title: Text('Discounts'),
-              actions: [
-                IconButton(
-                  icon: user.profilePicture != null
-                      ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
-                      : Icon(Icons.person),
-                  onPressed: () {
-                    // Acción para acceder al perfil
-                  },
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),  // Esperando la carga
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),  // Error en la carga
+          );
+        } else if (snapshot.hasData) {
+          storeList = snapshot.data!;  // Asigna los datos a storeList
+
+          return DefaultTabController(
+            length: 3,
+            child: Scaffold(
+              appBar: AppBar(
+                leading: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Image.asset('lib/assets/logo.png'),
                 ),
-              ],
-              bottom: TabBar(
-                tabs: [
-                  Tab(text: 'Discounts'),
-                  Tab(text: 'Storefronts'),
-                  Tab(text: 'Wishlist'),
+                title: Text('Discounts'),
+                actions: [
+                  IconButton(
+                    icon: user.profilePicture != null
+                        ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
+                        : Icon(Icons.person),
+                    onPressed: () async {
+                      final updatedUser = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfileView(user: user),
+                        ),
+                      );
+
+                      // Actualiza el usuario en caso de que haya sido editado
+                      if (updatedUser != null) {
+                        setState(() {
+                          user = updatedUser;  // Actualizamos el usuario usando setState
+                        });
+                      }
+                    },
+                  ),
+                ],
+                bottom: TabBar(
+                  tabs: [
+                    Tab(text: 'Discounts'),
+                    Tab(text: 'Storefronts'),
+                    Tab(text: 'Wishlist'),
+                  ],
+                ),
+              ),
+              body: TabBarView(
+                children: [
+                  DiscountsTab(),
+                  StorefrontsTab(),
+                  WishlistTab(),
                 ],
               ),
             ),
-            body: TabBarView(
-              children: [
-                DiscountsTab(),
-                StorefrontsTab(),
-                WishlistTab(),
-              ],
-            ),
-          ),
-        );
+          );
+        } else {
+          return Scaffold(
+            body: Center(child: Text('No stores found')),  // No se encontraron tiendas
+          );
+        }
       },
     );
   }
