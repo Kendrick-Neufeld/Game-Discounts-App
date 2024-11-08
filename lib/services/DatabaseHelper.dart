@@ -92,4 +92,20 @@ class DatabaseHelper {
       return null;
     }
   }
+
+  Future<void> updateUser(User updatedUser) async {
+    final db = await database;
+
+    await db.update(
+      'usuarios', // Nombre de la tabla
+      {
+        'username': updatedUser.username,
+        'password': updatedUser.password,
+        'email': updatedUser.email,
+        'profile_picture': updatedUser.profilePicture,
+      },
+      where: 'id = ?', // Condición para identificar el usuario que queremos actualizar
+      whereArgs: [updatedUser.id], // El id del usuario que queremos actualizar
+    );
+  }
 }

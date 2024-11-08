@@ -13,6 +13,7 @@ import 'views/wishlist_tab.dart';
 import 'package:flutter/services.dart';
 import '/services/DatabaseHelper.dart';
 import 'models/user.dart';
+import 'views/user_profile_view.dart';
 
 Future<Game?> fetchGameDetails(String gameID) async {
   final url = 'https://www.cheapshark.com/api/1.0/games?id=$gameID';
@@ -88,10 +89,23 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final User user;
 
   HomeScreen({required this.user});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late User user;  // Usar una variable mutable para el estado del usuario
+
+  @override
+  void initState() {
+    super.initState();
+    user = widget.user;  // Inicializamos el usuario con el valor pasado
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +126,20 @@ class HomeScreen extends StatelessWidget {
                   icon: user.profilePicture != null
                       ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
                       : Icon(Icons.person),
-                  onPressed: () {
-                    // Acción para acceder al perfil
+                  onPressed: () async {
+                    final updatedUser = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfileView(user: user),
+                      ),
+                    );
+
+                    // Actualiza el usuario en caso de que haya sido editado
+                    if (updatedUser != null) {
+                      setState(() {
+                        user = updatedUser;  // Actualizamos el usuario usando setState
+                      });
+                    }
                   },
                 ),
               ],
