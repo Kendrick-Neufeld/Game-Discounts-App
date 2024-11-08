@@ -11,6 +11,8 @@ import 'views/discounts_tab.dart';
 import 'views/storefonts_tab.dart';
 import 'views/wishlist_tab.dart';
 import 'package:flutter/services.dart';
+import '/services/DatabaseHelper.dart';
+import 'models/user.dart';
 
 Future<Game?> fetchGameDetails(String gameID) async {
   final url = 'https://www.cheapshark.com/api/1.0/games?id=$gameID';
@@ -24,6 +26,7 @@ Future<Game?> fetchGameDetails(String gameID) async {
     return null;
   }
 }
+
 Future<List<GameDeal>> fetchGameDeals({int pageNumber = 0, String title = ''}) async {
   final response = await http.get(
     Uri.parse('https://www.cheapshark.com/api/1.0/deals?pageNumber=$pageNumber&title=$title'),
@@ -60,75 +63,78 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  User? loggedUser;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Discounts App',
       theme: ThemeData.dark(),
-      home: HomeScreen(),
+      home: loggedUser == null ? LoginView(onLoginSuccess: _onLoginSuccess) : HomeScreen(user: loggedUser!),
     );
+  }
+
+  // Actualiza el usuario autenticado al iniciar sesión exitosamente
+  void _onLoginSuccess(User user) {
+    setState(() {
+      loggedUser = user;
+    });
   }
 }
 
 class HomeScreen extends StatelessWidget {
+  final User user;
+
+  HomeScreen({required this.user});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Store>>(
       future: fetchStores(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(child: Text('Error: ${snapshot.error}')),
-          );
-        } else if (snapshot.hasData) {
-          storeList = snapshot.data!;
-
-          return DefaultTabController(
-            length: 3,
-            child: Scaffold(
-              appBar: AppBar(
-                leading: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Image.asset('lib/assets/logo.png'),
-                ),
-                title: Text('Discounts'),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.person),
-                    onPressed: () {
-                      // Acción para acceder al perfil
-                    },
-                  ),
-                ],
-                bottom: TabBar(
-                  tabs: [
-                    Tab(text: 'Discounts'),
-                    Tab(text: 'Storefronts'),
-                    Tab(text: 'Wishlist'),
-                  ],
-                ),
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            appBar: AppBar(
+              leading: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Image.asset('lib/assets/logo.png'),
               ),
-              body: TabBarView(
-                children: [
-                  DiscountsTab(),
-                  StorefrontsTab(),
-                  WishlistTab(),
+              title: Text('Discounts'),
+              actions: [
+                IconButton(
+                  icon: user.profilePicture != null
+                      ? CircleAvatar(backgroundImage: MemoryImage(user.profilePicture!))
+                      : Icon(Icons.person),
+                  onPressed: () {
+                    // Acción para acceder al perfil
+                  },
+                ),
+              ],
+              bottom: TabBar(
+                tabs: [
+                  Tab(text: 'Discounts'),
+                  Tab(text: 'Storefronts'),
+                  Tab(text: 'Wishlist'),
                 ],
               ),
             ),
-          );
-        } else {
-          return Scaffold(
-            body: Center(child: Text('No stores found')),
-          );
-        }
+            body: TabBarView(
+              children: [
+                DiscountsTab(),
+                StorefrontsTab(),
+                WishlistTab(),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 }
-

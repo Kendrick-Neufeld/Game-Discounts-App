@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/user.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._();
@@ -21,17 +23,17 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'app_database.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             password TEXT NOT NULL,
-            email TEXT NOT NULL
+            email TEXT NOT NULL,
+            profile_picture BLOB
           );
         ''');
-
         await db.execute('''
           CREATE TABLE wishlist (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,15 +43,21 @@ class DatabaseHelper {
           );
         ''');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE usuarios ADD COLUMN profile_picture BLOB');
+        }
+      },
     );
   }
 
-  Future<void> insertUser(String username, String password, String email) async {
+  Future<void> insertUser(String username, String password, String email, Uint8List? profilePicture) async {
     final db = await database;
     await db.insert('usuarios', {
       'username': username,
       'password': password,
       'email': email,
+      'profile_picture': profilePicture,
     });
   }
 
@@ -68,5 +76,20 @@ class DatabaseHelper {
       'juego_id': juegoId,
       'usuario_id': userId,
     });
+  }
+
+  Future<User?> getUser(String username, String password) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'usuarios',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username, password],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromMap(result.first);
+    } else {
+      return null;
+    }
   }
 }
