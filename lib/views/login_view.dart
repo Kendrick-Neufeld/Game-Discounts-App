@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'register_view.dart';
+import '../models/user.dart';
+import '/services/DatabaseHelper.dart';
 
 class LoginView extends StatelessWidget {
+  final Function(User) onLoginSuccess;
+
+  LoginView({required this.onLoginSuccess});
+
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,16 +27,32 @@ class LoginView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                controller: _usernameController,
                 decoration: InputDecoration(labelText: 'Username'),
               ),
               SizedBox(height: 10),
               TextField(
+                controller: _passwordController,
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  String username = _usernameController.text;
+                  String password = _passwordController.text;
+
+                  // Consulta en la base de datos para verificar usuario
+                  User? user = await DatabaseHelper().getUser(username, password);
+
+                  if (user != null) {
+                    onLoginSuccess(user); // Llama a onLoginSuccess si el login es exitoso
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Usuario o contraseña incorrectos')),
+                    );
+                  }
+                },
                 child: Text('Login'),
               ),
               SizedBox(height: 20),

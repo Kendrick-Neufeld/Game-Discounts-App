@@ -1,13 +1,31 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/choose_picture_controller.dart';
 import '../widgets/image_picker_options.dart';
 import 'login_view.dart';
+import '/services/DatabaseHelper.dart';
+import '../models/user.dart';
+import '/main.dart';
 
 class RegisterView extends StatelessWidget {
+  // Controladores para los campos de texto
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  // Función onLoginSuccess que puedes personalizar
+  void _onLoginSuccess(BuildContext context, User user) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomeScreen(user: user),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Obtener el ImagePickerController
     final imagePickerController = Provider.of<ImagePickerController>(context);
 
     return Scaffold(
@@ -23,10 +41,9 @@ class RegisterView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Avatar (cámara) colocado en la parte superior
               GestureDetector(
                 onTap: () {
-                  showImagePickerOptions(context); // Abre el selector de imagen
+                  showImagePickerOptions(context);
                 },
                 child: CircleAvatar(
                   radius: 55,
@@ -55,37 +72,52 @@ class RegisterView extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 20), // Espacio entre el avatar y los campos de texto
-
-              // Campos de texto para el registro
+              SizedBox(height: 20),
               TextField(
-                decoration: InputDecoration(labelText: 'Nombre'),
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
               ),
               SizedBox(height: 10),
               TextField(
-                decoration: InputDecoration(labelText: 'Apellido'),
-              ),
-              SizedBox(height: 10),
-              TextField(
+                controller: _usernameController,
                 decoration: InputDecoration(labelText: 'Username'),
               ),
               SizedBox(height: 10),
               TextField(
+                controller: _passwordController,
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
               SizedBox(height: 20),
-
-              // Botón para registrar (sin imagen de perfil, solo registro)
               ElevatedButton(
-                onPressed: () {
-                  // Lógica de registro
+                onPressed: () async {
+                  final String username = _usernameController.text;
+                  final String password = _passwordController.text;
+                  final String email = _emailController.text;
+
+                  Uint8List? profilePicture;
+                  if (imagePickerController.image != null) {
+                    profilePicture = await imagePickerController.image!.readAsBytes();
+                  }
+
+                  final dbHelper = DatabaseHelper();
+                  await dbHelper.insertUser(username, password, email, profilePicture);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Usuario registrado exitosamente")),
+                  );
+
+                  // Navegar a LoginView y pasar onLoginSuccess como parámetro
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginView(onLoginSuccess: (user) => _onLoginSuccess(context, user)),
+                    ),
+                  );
                 },
                 child: Text('Register'),
               ),
               SizedBox(height: 20),
-
-              // Enlace al login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -97,7 +129,9 @@ class RegisterView extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginView()),
+                        MaterialPageRoute(
+                          builder: (context) => LoginView(onLoginSuccess: (user) => _onLoginSuccess(context, user)),
+                        ),
                       );
                     },
                     child: Text(
