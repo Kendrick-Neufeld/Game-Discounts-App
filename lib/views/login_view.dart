@@ -3,13 +3,19 @@ import 'register_view.dart';
 import '../models/user.dart';
 import '/services/DatabaseHelper.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends StatefulWidget {
   final Function(User) onLoginSuccess;
 
   LoginView({required this.onLoginSuccess});
 
+  @override
+  _LoginViewState createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordVisible = false; // Variable para controlar la visibilidad
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +34,27 @@ class LoginView extends StatelessWidget {
             children: [
               TextField(
                 controller: _usernameController,
+                style: TextStyle(color: Colors.black87),
                 decoration: InputDecoration(labelText: 'Username'),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                style: TextStyle(color: Colors.black87),
+                obscureText: !_isPasswordVisible, // Controla la visibilidad del texto
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible; // Alterna visibilidad
+                      });
+                    },
+                  ),
+                ),
               ),
               SizedBox(height: 20),
               ElevatedButton(
@@ -46,7 +66,7 @@ class LoginView extends StatelessWidget {
                   User? user = await DatabaseHelper().getUser(username, password);
 
                   if (user != null) {
-                    onLoginSuccess(user); // Llama a onLoginSuccess si el login es exitoso
+                    widget.onLoginSuccess(user); // Llama a onLoginSuccess si el login es exitoso
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Usuario o contraseña incorrectos')),

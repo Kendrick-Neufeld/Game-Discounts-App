@@ -8,11 +8,18 @@ import '/services/DatabaseHelper.dart';
 import '../models/user.dart';
 import '/main.dart';
 
-class RegisterView extends StatelessWidget {
+class RegisterView extends StatefulWidget {
+  @override
+  _RegisterViewState createState() => _RegisterViewState();
+}
+
+class _RegisterViewState extends State<RegisterView> {
   // Controladores para los campos de texto
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+
+  bool _isPasswordVisible = false; // Estado para controlar la visibilidad de la contraseña
 
   // Función onLoginSuccess que puedes personalizar
   void _onLoginSuccess(BuildContext context, User user) {
@@ -76,17 +83,33 @@ class RegisterView extends StatelessWidget {
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(labelText: 'Email'),
+                style: TextStyle(color: Colors.black87),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(labelText: 'Username'),
+                style: TextStyle(color: Colors.black87),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: !_isPasswordVisible,
+                style: TextStyle(color: Colors.black87),
               ),
               SizedBox(height: 20),
               ElevatedButton(

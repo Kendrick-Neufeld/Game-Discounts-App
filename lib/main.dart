@@ -10,7 +10,6 @@ import 'controllers/choose_picture_controller.dart';
 import 'views/discounts_tab.dart';
 import 'views/storefonts_tab.dart';
 import 'views/wishlist_tab.dart';
-import 'package:flutter/services.dart';
 import '/services/DatabaseHelper.dart';
 import 'models/user.dart';
 import 'views/user_profile_view.dart';
@@ -87,6 +86,12 @@ class _MyAppState extends State<MyApp> {
       loggedUser = user;
     });
   }
+
+  void _logout() {
+    setState(() {
+      loggedUser = null;
+    });
+  }
 }
 
 class HomeScreen extends StatefulWidget {
@@ -99,29 +104,53 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late User user;  // Usar una variable mutable para el estado del usuario
+  late User user;  // El usuario actual
+  User? loggedUser;  // El usuario autenticado (ahora es opcional)
 
   @override
   void initState() {
     super.initState();
     user = widget.user;  // Inicializamos el usuario con el valor pasado
+    loggedUser = user;  // Inicializamos loggedUser con el usuario pasado
+  }
+
+  // manejar el logout
+  void _logout() {
+    setState(() {
+      loggedUser = null;  // Resetear el usuario
+    });
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginView(onLoginSuccess: _onLoginSuccess),
+      ),
+          (Route<dynamic> route) => false, // Eliminar todas las rutas previas
+    );
+  }
+
+  // manejar el login exitoso
+  void _onLoginSuccess(User user) {
+    setState(() {
+      loggedUser = user;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Store>>(
-      future: fetchStores(),  // Mantener la lógica de fetchStores
+      future: fetchStores(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            body: Center(child: CircularProgressIndicator()),  // Esperando la carga
+            body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('Error: ${snapshot.error}')),  // Error en la carga
+            body: Center(child: Text('Error: ${snapshot.error}')),
           );
         } else if (snapshot.hasData) {
-          storeList = snapshot.data!;  // Asigna los datos a storeList
+          storeList = snapshot.data!;
 
           return DefaultTabController(
             length: 3,
@@ -141,14 +170,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       final updatedUser = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => UserProfileView(user: user),
+                          builder: (context) => UserProfileView(
+                            user: user,
+                            onLogout: _logout, // Pasar la función _logout aquí
+                          ),
                         ),
                       );
 
-                      // Actualiza el usuario en caso de que haya sido editado
                       if (updatedUser != null) {
                         setState(() {
-                          user = updatedUser;  // Actualizamos el usuario usando setState
+                          user = updatedUser;
                         });
                       }
                     },
@@ -173,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         } else {
           return Scaffold(
-            body: Center(child: Text('No stores found')),  // No se encontraron tiendas
+            body: Center(child: Text('No stores found')),
           );
         }
       },
