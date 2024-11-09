@@ -63,11 +63,12 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getWishlist(int userId) async {
     final db = await database;
-    return await db.query(
-      'wishlist',
-      where: 'usuario_id = ?',
-      whereArgs: [userId],
-    );
+    return await db.rawQuery('''
+    SELECT w.id, w.juego_id, g.title, g.thumb, g.cheapestPriceEver 
+    FROM wishlist w 
+    JOIN juegos g ON w.juego_id = g.id
+    WHERE w.usuario_id = ?
+  ''', [userId]);
   }
 
   Future<void> addGameToWishlist(int juegoId, int userId) async {
@@ -76,6 +77,15 @@ class DatabaseHelper {
       'juego_id': juegoId,
       'usuario_id': userId,
     });
+  }
+
+  Future<void> removeGameFromWishlist(int juegoId, int userId) async {
+    final db = await database;
+    await db.delete(
+      'wishlist',
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [juegoId, userId],
+    );
   }
 
   Future<User?> getUser(String username, String password) async {

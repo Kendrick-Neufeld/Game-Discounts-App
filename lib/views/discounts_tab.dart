@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../services/DatabaseHelper.dart';
+import '../services/preference_service.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
@@ -99,31 +101,48 @@ class _DiscountsTabState extends State<DiscountsTab> {
             ),
             actions: <Widget>[
               TextButton(
-                onPressed: () {
-                  // Implementa la lógica para agregar a la wishlist aquí
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  try {
+                    // Asegúrate de que `game.id` es el ID del juego y `userId` es el ID del usuario actual.
+                    int gameId = game.steamAppID != null ? int.parse(game.steamAppID!) : 0;
+                    int? userId = await PreferencesService().getUserId();
+
+                    // Agrega el juego a la wishlist para el usuario actual en la base de datos
+                    await DatabaseHelper().addGameToWishlist(gameId, userId!);
+
+                    // Muestra un mensaje de confirmación
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Se ha agregado correctamente a tu wishlist.'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+
+                    // Cierra el diálogo
+                    Navigator.of(context).pop();
+                  } catch (error) {
+                    // Muestra un mensaje de error si ocurre algún problema al agregar
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Error'),
+                          content: Text('No se pudo agregar a la wishlist.'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text('Cerrar'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
                 },
                 child: Text('Agregar a Wishlist'),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cerrar'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      // Alerta en caso de error al cargar datos
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('No se pudo cargar la información del juego.'),
-            actions: <Widget>[
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
