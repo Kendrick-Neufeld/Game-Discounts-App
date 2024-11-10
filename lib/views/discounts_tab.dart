@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
+import 'package:share/share.dart';
 
 class DiscountsTab extends StatefulWidget {
   @override
@@ -16,6 +17,13 @@ class _DiscountsTabState extends State<DiscountsTab> {
   Future<List<GameDeal>>? futureGameDeals;
   int pageNumber = 0;
   String searchQuery = '';
+
+  static const _channel = MethodChannel("flutter_share_plus");
+
+  Future<void> share_text(String message) async {
+    await _channel
+        .invokeMethod('share_text', <String, String>{'message': message});
+  }
 
   @override
   void initState() {
@@ -314,11 +322,8 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                                     icon: Icon(Icons.share, size: 18),
                                                     onPressed: () {
                                                       final message =
-                                                          "Hola, el juego '${deal.title}' está en oferta!!! está ${double.parse(deal.savings).round()}% menos en $storeName";
-                                                      Clipboard.setData(ClipboardData(text: message));
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(content: Text("Mensaje copiado al portapapeles")),
-                                                      );
+                                                          "Hola, el juego '${deal.title}' está en oferta!!! Está ${double.parse(deal.savings).round()}% menos en $storeName";
+                                                      Share.share(message);
                                                     },
                                                   ),
                                                 ],
