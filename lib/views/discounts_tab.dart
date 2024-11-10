@@ -107,6 +107,9 @@ class _DiscountsTabState extends State<DiscountsTab> {
                     int gameId = game.steamAppID != null ? int.parse(game.steamAppID!) : 0;
                     int? userId = await PreferencesService().getUserId();
 
+                    print('User ID: $userId');
+                    print('Game ID: $gameId');
+
                     // Agrega el juego a la wishlist para el usuario actual en la base de datos
                     await DatabaseHelper().addGameToWishlist(gameId, userId!);
 

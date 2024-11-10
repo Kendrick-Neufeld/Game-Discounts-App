@@ -70,12 +70,16 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> addGameToWishlist(int juegoId, int userId) async {
+  Future<void> addGameToWishlist(int gameId, int userId) async {
     final db = await database;
-    await db.insert('wishlist', {
-      'juego_id': juegoId,
-      'usuario_id': userId,
-    });
+    await db.insert(
+      'wishlist',
+      {
+        'juego_id': gameId,
+        'usuario_id': userId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore, // Evita duplicados
+    );
   }
 
   Future<void> removeGameFromWishlist(int juegoId, int userId) async {
