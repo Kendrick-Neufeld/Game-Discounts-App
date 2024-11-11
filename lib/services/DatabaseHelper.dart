@@ -82,13 +82,14 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> removeGameFromWishlist(int juegoId, int userId) async {
+  Future<void> removeGameFromWishlist(int gameId, int userId) async {
     final db = await database;
-    await db.delete(
+    int result = await db.delete(
       'wishlist',
       where: 'juego_id = ? AND usuario_id = ?',
-      whereArgs: [juegoId, userId],
+      whereArgs: [gameId, userId],
     );
+    print('Filas eliminadas: $result'); // Esto debería mostrar 1 si la eliminación fue exitosa
   }
 
   // Obtener los gameIds de la wishlist del usuario

@@ -55,8 +55,8 @@ class _WishlistTabState extends State<WishlistTab> {
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3, // Tres columnas
                         crossAxisSpacing: 12, // Espaciado horizontal entre tarjetas
-                        mainAxisSpacing: 20, // Espaciado vertical entre filas
-                        childAspectRatio: 0.50, // altura
+                        mainAxisSpacing: 10, // Espaciado vertical entre filas
+                        childAspectRatio: 0.40, // altura
                       ),
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
@@ -64,8 +64,6 @@ class _WishlistTabState extends State<WishlistTab> {
                         return GameCard(
                           game: game,
                           onGameRemoved: () {
-                            // Aquí puedes agregar la lógica para eliminar el juego de la lista
-                            // O actualizar el estado de la lista después de que se haya eliminado
                             setState(() {
                               snapshot.data!.removeAt(index);  // Elimina el juego de la lista
                             });
@@ -104,7 +102,7 @@ class GameCard extends StatelessWidget {
             child: Align(
               alignment: Alignment.topRight,
               child: IconButton(
-                icon: Icon(Icons.close, color: Colors.red),
+                icon: Icon(Icons.close, color: Colors.white),
                 onPressed: () => _showConfirmationDialog(context),
               ),
             ),
@@ -157,20 +155,23 @@ class GameCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
-                // Asegura de pasar el gameId correctamente aquí
-                final gameId = int.parse(game.steamAppID!);  // Si el steamAppID es un String, conviértelo a int
+                final gameId = int.tryParse(game.steamAppID ?? '0'); // Reemplaza si es necesario
 
-                await WishlistService.removeGameFromWishlist(gameId, context);
-                onGameRemoved();  // Actualizamos la lista luego de eliminar
+                if (gameId != null) {
+                  await WishlistService.removeGameFromWishlist(gameId, context);
+                  onGameRemoved();
+                } else {
+                  print("Error: gameId no válido");
+                }
                 Navigator.of(context).pop();
               },
-              child: Text('Sí'),
+              child: Text('Sí, Eliminar'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Solo cerrar si el usuario cancela
+                Navigator.of(context).pop();
               },
-              child: Text('No'),
+              child: Text('Cancelar'),
             ),
           ],
         );

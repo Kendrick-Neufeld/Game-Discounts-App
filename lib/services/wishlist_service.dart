@@ -93,7 +93,7 @@ class WishlistService {
   static Future<void> removeGameFromWishlist(int gameId, BuildContext context) async {
     final prefs = PreferencesService();
     final userId = await prefs.getUserId(); // Obtener el userId almacenado en SharedPreferences
-
+    print("Intentando eliminar gameId: $gameId para userId: $userId");
     if (userId != null) {
       // Eliminar el juego de la base de datos
       await DatabaseHelper().removeGameFromWishlist(gameId, userId);
