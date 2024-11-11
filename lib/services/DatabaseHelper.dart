@@ -36,7 +36,7 @@ class DatabaseHelper {
         ''');
         await db.execute('''
           CREATE TABLE wishlist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_wishlist INTEGER PRIMARY KEY AUTOINCREMENT,
             juego_id INTEGER NOT NULL,
             usuario_id INTEGER NOT NULL,
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
@@ -90,6 +90,23 @@ class DatabaseHelper {
       whereArgs: [juegoId, userId],
     );
   }
+
+  // Obtener los gameIds de la wishlist del usuario
+  Future<List<int>> getWishlistGameIds(int userId) async {
+    final db = await _instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wishlist',
+      columns: ['juego_id'],
+      where: 'usuario_id = ?',
+      whereArgs: [userId],
+    );
+
+    // Convertimos la lista de Map a una lista de gameIds (enteros)
+    return List.generate(maps.length, (i) {
+      return maps[i]['juego_id'];
+    });
+  }
+
 
   Future<User?> getUser(String username, String password) async {
     final db = await database;
