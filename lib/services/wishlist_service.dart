@@ -13,15 +13,11 @@ class WishlistService {
     final userId = await prefs
         .getUserId(); // Obtener el userId almacenado en SharedPreferences
 
-    // Imprimir userId y gameId para confirmar que los valores son correctos
-    print('User ID: $userId'); // Imprime el userId
-    print('Game ID: $gameId'); // Imprime el gameId
-
     if (userId != null) {
-      // Llamar al método de DatabaseHelper para agregar el juego
+      // Agregar el juego
       await DatabaseHelper().addGameToWishlist(gameId, userId);
 
-      // Mostrar un mensaje de éxito
+      // Mostrar un mensaje
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Se ha agregado a tu wishlist')),
       );
@@ -77,7 +73,7 @@ class WishlistService {
         // Verificar si la respuesta contiene datos y es un mapa con la estructura esperada
         if (data != null && data.isNotEmpty) {
           return Game.fromJson(
-              data); // Asumimos que data es un mapa JSON con los detalles del juego
+              data);
         } else {
           throw Exception('Game data not found');
         }
@@ -102,7 +98,6 @@ class WishlistService {
       // Eliminar el juego de la base de datos
       await DatabaseHelper().removeGameFromWishlist(gameId, userId);
 
-      // Mostrar un mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Se ha eliminado de tu wishlist')),
       );

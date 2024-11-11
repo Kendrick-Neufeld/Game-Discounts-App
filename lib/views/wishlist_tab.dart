@@ -153,23 +153,22 @@ class GameCard extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Eliminar de la wishlist'),
           content: Text('¿Estás seguro de que deseas eliminar este juego de tu wishlist?'),
           actions: [
             TextButton(
               onPressed: () async {
-                // Asegúrate de pasar el gameId correctamente aquí
+                // Asegura de pasar el gameId correctamente aquí
                 final gameId = int.parse(game.steamAppID!);  // Si el steamAppID es un String, conviértelo a int
 
                 await WishlistService.removeGameFromWishlist(gameId, context);
-                onGameRemoved();  // Actualizamos la lista después de eliminar
-                Navigator.of(context).pop(); // Cerrar el diálogo
+                onGameRemoved();  // Actualizamos la lista luego de eliminar
+                Navigator.of(context).pop();
               },
               child: Text('Sí'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Solo cerrar el diálogo si el usuario cancela
+                Navigator.of(context).pop(); // Solo cerrar si el usuario cancela
               },
               child: Text('No'),
             ),
