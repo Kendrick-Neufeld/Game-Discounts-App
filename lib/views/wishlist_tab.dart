@@ -56,7 +56,7 @@ class _WishlistTabState extends State<WishlistTab> {
                         crossAxisCount: 3, // Tres columnas
                         crossAxisSpacing: 12, // Espaciado horizontal entre tarjetas
                         mainAxisSpacing: 10, // Espaciado vertical entre filas
-                        childAspectRatio: 0.40, // altura
+                        childAspectRatio: 0.42, // altura
                       ),
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
@@ -155,7 +155,7 @@ class GameCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
-                final gameId = int.tryParse(game.steamAppID ?? '0'); // Reemplaza si es necesario
+                final gameId = int.tryParse(game.steamAppID ?? '0');
 
                 if (gameId != null) {
                   await WishlistService.removeGameFromWishlist(gameId, context);
