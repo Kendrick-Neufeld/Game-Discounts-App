@@ -3,9 +3,24 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:path/path.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<void> _launchURLs(String url) async {
+  final Uri uri = Uri.parse(url);
+  try {
+    bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication, // Asegura abrir en un navegador externo
+    );
+    if (!launched) throw 'No se pudo abrir el enlace';
+  } catch (e) {
+    print('Error al intentar abrir el enlace: $e');
+  }
+}
 
 class DiscountsTab extends StatefulWidget {
   @override
@@ -38,7 +53,6 @@ class _DiscountsTabState extends State<DiscountsTab> {
 
   void showGameDetailsDialog(BuildContext context, String gameID) async {
     final game = await fetchGameDetails(gameID);
-
     if (game != null) {
       showDialog(
         context: context,
@@ -79,15 +93,36 @@ class _DiscountsTabState extends State<DiscountsTab> {
                     children: game.deals.map((deal) {
                       return Container(
                         width: (MediaQuery.of(context).size.width / 2) - 32, // Divide en dos columnas
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            getStoreIcon(deal.storeID),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '\$${deal.price} (${double.parse(deal.savings).round()}% off)',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                            // Usamos un Row para distribuir los elementos
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espacio entre los elementos
+                              children: [
+                                getStoreIcon(deal.storeID),
+                                SizedBox(width: 10),
+                                // Texto con precio que es el enlace
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final url = 'https://www.cheapshark.com/redirect?dealID=${deal.dealID}';
+                                      _launchURLs(url);
+                                    },
+                                    child: Text(
+                                      '\$${deal.price} (${double.parse(deal.savings).round()}% off)', // Texto del precio como enlace
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue, // Color azul para indicar enlace
+                                        decoration: TextDecoration.underline, // Subrayado para el enlace
+                                      ),
+                                      overflow: TextOverflow.ellipsis, // Evita que se corte el texto
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -100,7 +135,6 @@ class _DiscountsTabState extends State<DiscountsTab> {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
-                  // Implementa la lógica para agregar a la wishlist aquí
                   Navigator.of(context).pop();
                 },
                 child: Text('Agregar a Wishlist'),
@@ -134,6 +168,15 @@ class _DiscountsTabState extends State<DiscountsTab> {
           );
         },
       );
+    }
+  }
+
+// Método para abrir URLs en el navegador predeterminado
+  void _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'No se puede abrir el enlace $url';
     }
   }
 
