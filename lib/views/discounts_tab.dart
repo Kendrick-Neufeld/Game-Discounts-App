@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../services/DatabaseHelper.dart';
+import '../services/preference_service.dart';
+import '../services/wishlist_service.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
@@ -100,7 +103,8 @@ class _DiscountsTabState extends State<DiscountsTab> {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
-                  // Implementa la lógica para agregar a la wishlist aquí
+                  // Agregar el juego a la wishlist
+                  WishlistService.addGameToWishlist(int.parse(gameID), context);
                   Navigator.of(context).pop();
                 },
                 child: Text('Agregar a Wishlist'),
@@ -241,7 +245,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                     rows: snapshot.data!.map((deal) {
                                       final storeName = storeList.firstWhere(
                                             (store) => store.storeID == deal.storeID,
-                                        orElse: () => Store(storeID: '', storeName: 'Unknown', iconUrl: ''),
+                                        orElse: () => Store(storeID: '', storeName: 'Unknown', iconUrl: '', logoUrl: ''),
                                       ).storeName;
 
                                       return DataRow(cells: [
@@ -365,7 +369,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
   Widget getStoreIcon(String storeID) {
     final store = storeList.firstWhere(
           (store) => store.storeID == storeID,
-      orElse: () => Store(storeID: '', storeName: '', iconUrl: ''),
+      orElse: () => Store(storeID: '', storeName: '', iconUrl: '', logoUrl: ''),
     );
 
     if (store.storeID.isNotEmpty) {
