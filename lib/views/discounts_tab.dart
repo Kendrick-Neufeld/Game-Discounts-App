@@ -245,7 +245,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
                                     rows: snapshot.data!.map((deal) {
                                       final storeName = storeList.firstWhere(
                                             (store) => store.storeID == deal.storeID,
-                                        orElse: () => Store(storeID: '', storeName: 'Unknown', iconUrl: ''),
+                                        orElse: () => Store(storeID: '', storeName: 'Unknown', iconUrl: '', logoUrl: ''),
                                       ).storeName;
 
                                       return DataRow(cells: [
@@ -369,7 +369,7 @@ class _DiscountsTabState extends State<DiscountsTab> {
   Widget getStoreIcon(String storeID) {
     final store = storeList.firstWhere(
           (store) => store.storeID == storeID,
-      orElse: () => Store(storeID: '', storeName: '', iconUrl: ''),
+      orElse: () => Store(storeID: '', storeName: '', iconUrl: '', logoUrl: ''),
     );
 
     if (store.storeID.isNotEmpty) {
