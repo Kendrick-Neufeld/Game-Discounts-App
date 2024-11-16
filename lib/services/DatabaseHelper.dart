@@ -72,13 +72,25 @@ class DatabaseHelper {
 
   Future<void> addGameToWishlist(int gameId, int userId) async {
     final db = await database;
+
+    // Verificar si el juego ya está en la wishlist
+    final existing = await db.query(
+      'wishlist',
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [gameId, userId],
+    );
+
+    if (existing.isNotEmpty) {
+      throw Exception('Este juego ya está en tu wishlist');
+    }
+
+    // Si no existe, insertarlo
     await db.insert(
       'wishlist',
       {
         'juego_id': gameId,
         'usuario_id': userId,
       },
-      conflictAlgorithm: ConflictAlgorithm.ignore, // Evita duplicados
     );
   }
 

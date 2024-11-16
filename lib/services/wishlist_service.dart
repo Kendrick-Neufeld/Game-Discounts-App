@@ -7,20 +7,25 @@ import 'DatabaseHelper.dart';
 
 class WishlistService {
   // Agregar juego a la wishlist
-  static Future<void> addGameToWishlist(int gameId,
-      BuildContext context) async {
+  static Future<void> addGameToWishlist(int gameId, BuildContext context) async {
     final prefs = PreferencesService();
-    final userId = await prefs
-        .getUserId(); // Obtener el userId almacenado en SharedPreferences
+    final userId = await prefs.getUserId(); // Obtener el userId almacenado en SharedPreferences
 
     if (userId != null) {
-      // Agregar el juego
-      await DatabaseHelper().addGameToWishlist(gameId, userId);
+      try {
+        // Intentar agregar el juego
+        await DatabaseHelper().addGameToWishlist(gameId, userId);
 
-      // Mostrar un mensaje
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Se ha agregado a tu wishlist')),
-      );
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Se ha agregado a tu wishlist')),
+        );
+      } catch (e) {
+        // Manejar caso en que ya existe en la wishlist
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     } else {
       // Mostrar error si no se encuentra un userId
       ScaffoldMessenger.of(context).showSnackBar(
