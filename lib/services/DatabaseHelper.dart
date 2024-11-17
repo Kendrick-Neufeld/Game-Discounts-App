@@ -71,9 +71,12 @@ class DatabaseHelper {
   }
 
   Future<void> addGameToWishlist(int gameId, int userId) async {
+    if (gameId == 0 || gameId == null) {
+      throw Exception('El ID del juego no es válido');
+    }
+
     final db = await database;
 
-    // Verificar si el juego ya está en la wishlist
     final existing = await db.query(
       'wishlist',
       where: 'juego_id = ? AND usuario_id = ?',
@@ -84,7 +87,6 @@ class DatabaseHelper {
       throw Exception('Este juego ya está en tu wishlist');
     }
 
-    // Si no existe, insertarlo
     await db.insert(
       'wishlist',
       {
@@ -92,16 +94,6 @@ class DatabaseHelper {
         'usuario_id': userId,
       },
     );
-  }
-
-  Future<void> removeGameFromWishlist(int gameId, int userId) async {
-    final db = await database;
-    int result = await db.delete(
-      'wishlist',
-      where: 'juego_id = ? AND usuario_id = ?',
-      whereArgs: [gameId, userId],
-    );
-    print('Filas eliminadas: $result'); // Esto debería mostrar 1 si la eliminación fue exitosa
   }
 
   // Obtener los gameIds de la wishlist del usuario
@@ -118,6 +110,21 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) {
       return maps[i]['juego_id'];
     });
+  }
+
+  Future<void> removeGameFromWishlist(int gameId, int userId) async {
+    final db = await database;
+
+    int result = await db.delete(
+      'wishlist',
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [gameId, userId],
+    );
+
+    print('Filas eliminadas: $result');
+    if (result == 0) {
+      throw Exception('El juego no se encontró en la wishlist');
+    }
   }
 
 

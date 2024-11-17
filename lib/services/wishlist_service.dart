@@ -8,26 +8,29 @@ import 'DatabaseHelper.dart';
 class WishlistService {
   // Agregar juego a la wishlist
   static Future<void> addGameToWishlist(int gameId, BuildContext context) async {
+    if (gameId == 0 || gameId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ID del juego no válido')),
+      );
+      return;
+    }
+
     final prefs = PreferencesService();
-    final userId = await prefs.getUserId(); // Obtener el userId almacenado en SharedPreferences
+    final userId = await prefs.getUserId();
 
     if (userId != null) {
       try {
-        // Intentar agregar el juego
         await DatabaseHelper().addGameToWishlist(gameId, userId);
-
-        // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Se ha agregado a tu wishlist')),
         );
       } catch (e) {
-        // Manejar caso en que ya existe en la wishlist
+        print('Error al agregar a la wishlist: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
       }
     } else {
-      // Mostrar error si no se encuentra un userId
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: No se pudo agregar el juego.')),
       );
@@ -97,18 +100,25 @@ class WishlistService {
   // Eliminar juego de la wishlist
   static Future<void> removeGameFromWishlist(int gameId, BuildContext context) async {
     final prefs = PreferencesService();
-    final userId = await prefs.getUserId(); // Obtener el userId almacenado en SharedPreferences
-    print("Intentando eliminar gameId: $gameId para userId: $userId");
-    if (userId != null) {
-      // Eliminar el juego de la base de datos
-      await DatabaseHelper().removeGameFromWishlist(gameId, userId);
+    final userId = await prefs.getUserId();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Se ha eliminado de tu wishlist')),
-      );
+    print('Eliminar juego con gameId: $gameId y userId: $userId');
+
+    if (userId != null) {
+      try {
+        await DatabaseHelper().removeGameFromWishlist(gameId, userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Se ha eliminado de tu wishlist')),
+        );
+      } catch (e) {
+        print('Error al eliminar el juego: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al eliminar el juego.')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: No se pudo eliminar el juego.')),
+        SnackBar(content: Text('No se encontró el usuario')),
       );
     }
   }
