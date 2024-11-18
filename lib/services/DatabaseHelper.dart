@@ -35,12 +35,13 @@ class DatabaseHelper {
           );
         ''');
         await db.execute('''
-          CREATE TABLE wishlist (
-            id_wishlist INTEGER PRIMARY KEY AUTOINCREMENT,
-            juego_id INTEGER NOT NULL,
-            usuario_id INTEGER NOT NULL,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-          );
+         CREATE TABLE wishlist (
+           id_wishlist INTEGER PRIMARY KEY AUTOINCREMENT,
+           juego_id INTEGER NOT NULL,
+           usuario_id INTEGER NOT NULL,
+           FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+           UNIQUE (juego_id, usuario_id) -- Evita duplicados
+         );
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -72,14 +73,27 @@ class DatabaseHelper {
 
   Future<void> addGameToWishlist(int gameId, int userId) async {
     final db = await database;
-    await db.insert(
+
+    // Verificar si el juego ya está en la wishlist
+    final existingGame = await db.query(
       'wishlist',
-      {
-        'juego_id': gameId,
-        'usuario_id': userId,
-      },
-      conflictAlgorithm: ConflictAlgorithm.ignore, // Evita duplicados
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [gameId, userId],
     );
+
+    if (existingGame.isEmpty) {
+      // Si no existe, insertar el juego
+      await db.insert(
+        'wishlist',
+        {
+          'juego_id': gameId,
+          'usuario_id': userId,
+        },
+      );
+    } else {
+      // Juego ya existe, manejar el caso (opcional)
+      throw Exception('Este juego ya está en tu wishlist.');
+    }
   }
 
   Future<void> removeGameFromWishlist(int gameId, int userId) async {

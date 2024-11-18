@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 class Game {
+  int GameID;
   final String title;
   final String? steamAppID;
   final String thumb;
@@ -9,6 +10,7 @@ class Game {
   final List<GameDealDetail> deals;
 
   Game({
+    required this.GameID,
     required this.title,
     this.steamAppID,
     required this.thumb,
@@ -19,6 +21,7 @@ class Game {
 
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
+      GameID: 0,
       title: json['info']['title'],
       steamAppID: json['info']['steamAppID'],
       thumb: json['info']['thumb'],

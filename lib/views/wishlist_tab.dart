@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../Game.dart';
+import '../Store.dart';
+import '../main.dart';
 import '../services/wishlist_service.dart';
+import 'discounts_tab.dart';
 
 class WishlistTab extends StatefulWidget {
   @override
@@ -116,29 +119,35 @@ class GameCard extends StatelessWidget {
               width: double.infinity,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  game.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      game.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Cheapest Price: \$${game.deals.first.price}',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                      ),
+                    ),
+                    SizedBox(height: 8), // Espacio entre el precio y el icono
+                    getStoreIcon(game.deals.first.storeID),
+                  ],
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Cheapest Price: \$${game.cheapestPriceEver}',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -155,7 +164,7 @@ class GameCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
-                final gameId = int.tryParse(game.steamAppID ?? '0');
+                final gameId = game.GameID;
 
                 if (gameId != null) {
                   await WishlistService.removeGameFromWishlist(gameId, context);
@@ -177,5 +186,23 @@ class GameCard extends StatelessWidget {
         );
       },
     );
+  }
+  Widget getStoreIcon(String storeID) {
+    final store = storeList.firstWhere(
+          (store) => store.storeID == storeID,
+      orElse: () => Store(storeID: '', storeName: '', iconUrl: '', logoUrl: ''),
+    );
+
+    if (store.storeID.isNotEmpty) {
+      return Image.network(
+        store.iconUrl,
+        width: 27,
+        height: 27,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Icon(Icons.store),
+      );
+    } else {
+      return Icon(Icons.store);
+    }
   }
 }
