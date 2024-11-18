@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/preference_service.dart';
 import 'register_view.dart';
 import '../models/user.dart';
 import '/services/DatabaseHelper.dart';
@@ -15,7 +16,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isPasswordVisible = false; // Variable para controlar la visibilidad
+  bool _isPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,7 @@ class _LoginViewState extends State<LoginView> {
               TextField(
                 controller: _passwordController,
                 style: TextStyle(color: Colors.black87),
-                obscureText: !_isPasswordVisible, // Controla la visibilidad del texto
+                obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   suffixIcon: IconButton(
@@ -50,7 +51,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _isPasswordVisible = !_isPasswordVisible; // Alterna visibilidad
+                        _isPasswordVisible = !_isPasswordVisible;
                       });
                     },
                   ),
@@ -62,11 +63,17 @@ class _LoginViewState extends State<LoginView> {
                   String username = _usernameController.text;
                   String password = _passwordController.text;
 
-                  // Consulta en la base de datos para verificar usuario
+                  // Consulta en la base de datos para verificar el usuario
                   User? user = await DatabaseHelper().getUser(username, password);
 
                   if (user != null) {
-                    widget.onLoginSuccess(user); // Llama a onLoginSuccess si el login es exitoso
+                    // Guarda el userId en SharedPreferences
+                    await PreferencesService().setUserId(user.id);
+
+                    // Llama a onLoginSuccess con el usuario si el login es exitoso
+                    widget.onLoginSuccess(user);
+
+                    // Puedes hacer un SnackBar o navegar a la siguiente vista si es necesario
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Usuario o contraseña incorrectos')),

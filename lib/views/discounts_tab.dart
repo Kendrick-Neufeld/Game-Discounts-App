@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:path/path.dart';
 import '../services/DatabaseHelper.dart';
+import '../services/preference_service.dart';
+import '../services/wishlist_service.dart';
+import 'package:path/path.dart';
 import '/GameDeal.dart';
 import '/Store.dart';
 import '/main.dart';
@@ -136,6 +138,8 @@ class _DiscountsTabState extends State<DiscountsTab> {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
+                  // Agregar el juego a la wishlist
+                  WishlistService.addGameToWishlist(int.parse(gameID), context);
                   Navigator.of(context).pop();
                 },
                 child: Text('Agregar a Wishlist'),

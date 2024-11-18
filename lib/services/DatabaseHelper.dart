@@ -35,12 +35,13 @@ class DatabaseHelper {
           );
         ''');
         await db.execute('''
-          CREATE TABLE wishlist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            juego_id INTEGER NOT NULL,
-            usuario_id INTEGER NOT NULL,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-          );
+         CREATE TABLE wishlist (
+           id_wishlist INTEGER PRIMARY KEY AUTOINCREMENT,
+           juego_id INTEGER NOT NULL,
+           usuario_id INTEGER NOT NULL,
+           FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+           UNIQUE (juego_id, usuario_id) -- Evita duplicados
+         );
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -70,13 +71,57 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> addGameToWishlist(int juegoId, int userId) async {
+  Future<void> addGameToWishlist(int gameId, int userId) async {
     final db = await database;
-    await db.insert('wishlist', {
-      'juego_id': juegoId,
-      'usuario_id': userId,
+
+    // Verificar si el juego ya está en la wishlist
+    final existingGame = await db.query(
+      'wishlist',
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [gameId, userId],
+    );
+
+    if (existingGame.isEmpty) {
+      // Si no existe, insertar el juego
+      await db.insert(
+        'wishlist',
+        {
+          'juego_id': gameId,
+          'usuario_id': userId,
+        },
+      );
+    } else {
+      // Juego ya existe, manejar el caso (opcional)
+      throw Exception('Este juego ya está en tu wishlist.');
+    }
+  }
+
+  Future<void> removeGameFromWishlist(int gameId, int userId) async {
+    final db = await database;
+    int result = await db.delete(
+      'wishlist',
+      where: 'juego_id = ? AND usuario_id = ?',
+      whereArgs: [gameId, userId],
+    );
+    print('Filas eliminadas: $result'); // Esto debería mostrar 1 si la eliminación fue exitosa
+  }
+
+  // Obtener los gameIds de la wishlist del usuario
+  Future<List<int>> getWishlistGameIds(int userId) async {
+    final db = await _instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wishlist',
+      columns: ['juego_id'],
+      where: 'usuario_id = ?',
+      whereArgs: [userId],
+    );
+
+    // Convertimos la lista de Map a una lista de gameIds (enteros)
+    return List.generate(maps.length, (i) {
+      return maps[i]['juego_id'];
     });
   }
+
 
   Future<User?> getUser(String username, String password) async {
     final db = await database;
