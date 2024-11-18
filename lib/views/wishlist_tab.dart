@@ -144,15 +144,25 @@ class _WishlistTabState extends State<WishlistTab> {
                         final game = snapshot.data![index];
                         return GestureDetector(
                           onTap: () {
-                            _showGameDetails(game); // Mostrar detalles al tocar la tarjeta
+                            _showGameDetails(game); // Mostrar detalles
                           },
                           child: WishlistItemCard(
                             game: game,
                             onRemove: () async {
                               final gameId = int.tryParse(game.steamAppID ?? '0');
                               if (gameId != null) {
-                                await WishlistService.removeGameFromWishlist(gameId, context);
-                                fetchWishlistGames(); // Volver a cargar la lista después de eliminar
+                                // Elimina el juego de la lista local primero
+                                setState(() {
+                                  wishlistGames = wishlistGames?.then(
+                                        (games) => games.where((g) => g.steamAppID != game.steamAppID).toList(),
+                                  );
+                                });
+                                // Luego elimina de la base de datos
+                                try {
+                                  await WishlistService.removeGameFromWishlist(gameId, context);
+                                } catch (e) {
+                                  print("Error eliminando juego de la wishlist: $e");
+                                }
                               } else {
                                 print("Error: gameId no válido");
                               }
