@@ -19,17 +19,98 @@ class _WishlistTabState extends State<WishlistTab> {
     fetchWishlistGames();
   }
 
+  // Función para obtener los juegos de la wishlist
   void fetchWishlistGames() {
     setState(() {
       wishlistGames = WishlistService.getWishlistGames(context);
     });
   }
 
+  // Mostrar cuadro de diálogo con información detallada
+  void _showGameDetails(Game game) {
+    showDialog(
+      context: context, // El contexto se pasa aquí directamente.
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            game.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Imagen del juego
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      game.thumb,
+                      height: 150,
+                      width: 150,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+
+                // Información del precio más bajo
+                Text(
+                  'Cheapest Price Ever: \$${game.cheapestPriceEver}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Date of Cheapest Price: ${game.cheapestPriceDate.toLocal()}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+
+                // Ofertas disponibles
+                if (game.deals.isNotEmpty) ...[
+                  SizedBox(height: 15),
+                  Text(
+                    'Available Deals:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  ...game.deals.map(
+                        (deal) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'Store: ${deal.storeID}',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          'Price: \$${deal.price} - Savings: ${deal.savings}%',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Fondo del wishlist_tab (se mantiene como el fondo actual)
+        // Fondo del wishlist_tab
         Positioned.fill(
           child: Opacity(
             opacity: 0.15,
@@ -64,13 +145,32 @@ class _WishlistTabState extends State<WishlistTab> {
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
                         final game = snapshot.data![index];
-                        return GameCard(
-                          game: game,
-                          onGameRemoved: () {
-                            setState(() {
-                              snapshot.data!.removeAt(index);  // Elimina el juego de la lista
-                            });
+                        return GestureDetector(
+                          onTap: () {
+                            _showGameDetails(game); // Mostrar detalles
                           },
+                          child: WishlistItemCard(
+                            game: game,
+                            onRemove: () async {
+                              final gameId = int.tryParse(game.steamAppID ?? '0');
+                              if (gameId != null) {
+                                // Elimina el juego de la lista local primero
+                                setState(() {
+                                  wishlistGames = wishlistGames?.then(
+                                        (games) => games.where((g) => g.steamAppID != game.steamAppID).toList(),
+                                  );
+                                });
+                                // Luego elimina de la base de datos
+                                try {
+                                  await WishlistService.removeGameFromWishlist(gameId, context);
+                                } catch (e) {
+                                  print("Error eliminando juego de la wishlist: $e");
+                                }
+                              } else {
+                                print("Error: gameId no válido");
+                              }
+                            },
+                          ),
                         );
                       },
                     );
@@ -85,11 +185,14 @@ class _WishlistTabState extends State<WishlistTab> {
   }
 }
 
-class GameCard extends StatelessWidget {
+class WishlistItemCard extends StatelessWidget {
   final Game game;
-  final VoidCallback onGameRemoved;
+  final VoidCallback onRemove;
 
-  GameCard({required this.game, required this.onGameRemoved});
+  const WishlistItemCard({
+    required this.game,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +271,7 @@ class GameCard extends StatelessWidget {
 
                 if (gameId != null) {
                   await WishlistService.removeGameFromWishlist(gameId, context);
-                  onGameRemoved();
+                  onRemove();  // Eliminar el juego de la lista
                 } else {
                   print("Error: gameId no válido");
                 }
