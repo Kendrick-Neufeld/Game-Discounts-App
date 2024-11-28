@@ -74,7 +74,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Discounts App',
+      title: 'Shady Corner',
       theme: ThemeData.dark(),
       home: loggedUser == null ? LoginView(onLoginSuccess: _onLoginSuccess) : HomeScreen(user: loggedUser!),
     );
@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: EdgeInsets.all(8.0),
                   child: Image.asset('lib/assets/logo.png'),
                 ),
-                title: Text('Discounts'),
+                title: Text('Shady Corner'),
                 actions: [
                   IconButton(
                     icon: user.profilePicture != null
