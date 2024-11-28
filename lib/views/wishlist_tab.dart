@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../Game.dart';
 import '../Store.dart';
 import '../main.dart';
@@ -29,14 +31,14 @@ class _WishlistTabState extends State<WishlistTab> {
   // Mostrar cuadro de diálogo con información detallada
   void _showGameDetails(Game game) {
     showDialog(
-      context: context, // El contexto se pasa aquí directamente.
+      context: context,
       builder: (context) {
         return AlertDialog(
           title: Text(
             game.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -55,39 +57,60 @@ class _WishlistTabState extends State<WishlistTab> {
                   ),
                 ),
                 SizedBox(height: 10),
-
-                // Información del precio más bajo
+                // Información del precio más bajo con fecha
                 Text(
-                  'Cheapest Price Ever: \$${game.cheapestPriceEver}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  'Cheapest Price Ever: \$${game.cheapestPriceEver} on ${DateFormat.yMMMd().format(game.cheapestPriceDate)}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 5),
-                Text(
-                  'Date of Cheapest Price: ${game.cheapestPriceDate.toLocal()}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
-
+                SizedBox(height: 15),
                 // Ofertas disponibles
                 if (game.deals.isNotEmpty) ...[
-                  SizedBox(height: 15),
                   Text(
                     'Available Deals:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  ...game.deals.map(
-                        (deal) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          'Store: ${deal.storeID}',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                  SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: game.deals.map((deal) {
+                      return Container(
+                        width: (MediaQuery.of(context).size.width / 2) - 32, // Divide en dos columnas
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espacio entre elementos
+                              children: [
+                                // Icono de la tienda
+                                getStoreIcon(deal.storeID),
+                                SizedBox(width: 10),
+                                // Precio como enlace
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final url = 'https://www.cheapshark.com/redirect?dealID=${deal.dealID}';
+                                      _launchURLs(url);
+                                    },
+                                    child: Text(
+                                      '\$${deal.price} (${double.parse(deal.savings).round()}% off)', // Precio y ahorro
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue, // Color azul para indicar enlace
+                                        decoration: TextDecoration.underline, // Subrayado para el enlace
+                                      ),
+                                      overflow: TextOverflow.ellipsis, // Evita desbordamiento
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        subtitle: Text(
-                          'Price: \$${deal.price} - Savings: ${deal.savings}%',
-                        ),
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   ),
                 ],
               ],
@@ -105,6 +128,7 @@ class _WishlistTabState extends State<WishlistTab> {
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -290,22 +314,34 @@ class WishlistItemCard extends StatelessWidget {
       },
     );
   }
-  Widget getStoreIcon(String storeID) {
-    final store = storeList.firstWhere(
-          (store) => store.storeID == storeID,
-      orElse: () => Store(storeID: '', storeName: '', iconUrl: '', logoUrl: ''),
-    );
+}
+Widget getStoreIcon(String storeID) {
+  final store = storeList.firstWhere(
+        (store) => store.storeID == storeID,
+    orElse: () => Store(storeID: '', storeName: '', iconUrl: '', logoUrl: ''),
+  );
 
-    if (store.storeID.isNotEmpty) {
-      return Image.network(
-        store.iconUrl,
-        width: 27,
-        height: 27,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Icon(Icons.store),
-      );
-    } else {
-      return Icon(Icons.store);
-    }
+  if (store.storeID.isNotEmpty) {
+    return Image.network(
+      store.iconUrl,
+      width: 27,
+      height: 27,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Icon(Icons.store),
+    );
+  } else {
+    return Icon(Icons.store);
+  }
+}
+Future<void> _launchURLs(String url) async {
+  final Uri uri = Uri.parse(url);
+  try {
+    bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication, // Asegura abrir en un navegador externo
+    );
+    if (!launched) throw 'No se pudo abrir el enlace';
+  } catch (e) {
+    print('Error al intentar abrir el enlace: $e');
   }
 }
